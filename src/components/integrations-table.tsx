@@ -40,16 +40,6 @@ export function IntegrationsTable({ integrations }: IntegrationsTableProps) {
     return date.toISOString().replace('T', ' ').split('.')[0];
   };
 
-  const handleSync = async (integrationId: string) => {
-    // TODO: Implement sync functionality
-    console.log('Syncing integration:', integrationId);
-  };
-
-  const handleDisconnect = async (integrationId: string) => {
-    // TODO: Implement disconnect functionality
-    console.log('Disconnecting integration:', integrationId);
-  };
-
   return (
     <>
       <Card>
@@ -97,24 +87,6 @@ export function IntegrationsTable({ integrations }: IntegrationsTableProps) {
                       >
                         {integration.status.replace('_', ' ')}
                       </span>
-                      <div className='flex gap-2'>
-                        {integration.status === 'active' && (
-                          <Button
-                            variant='outline'
-                            size='sm'
-                            onClick={() => handleSync(integration.id)}
-                          >
-                            Sync
-                          </Button>
-                        )}
-                        <Button
-                          variant='outline'
-                          size='sm'
-                          onClick={() => handleDisconnect(integration.id)}
-                        >
-                          Disconnect
-                        </Button>
-                      </div>
                     </div>
                   </div>
                   <div className='mt-3 flex gap-6 text-sm text-gray-600'>
