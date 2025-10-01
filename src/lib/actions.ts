@@ -80,7 +80,7 @@ export async function addEmployee(formData: FormData) {
   return data;
 }
 
-type GenMsAuthUrlParams = {
+type GenAuthUrlParams = {
   selectedType: string;
   integrationName: string;
 };
@@ -88,7 +88,7 @@ type GenMsAuthUrlParams = {
 export const genMsAuthUrl = async ({
   selectedType,
   integrationName,
-}: GenMsAuthUrlParams) => {
+}: GenAuthUrlParams) => {
   // Generate PKCE parameters
   const { codeVerifier, codeChallenge } = await generatePKCEPair();
 
@@ -113,6 +113,38 @@ export const genMsAuthUrl = async ({
       integrationType: selectedType,
       integrationName: integrationName.trim(),
       codeVerifier, // Store code verifier in state for callback
+    })
+  );
+
+  return authUrl.toString();
+};
+
+export const genGoogleAuthUrl = async ({
+  selectedType,
+  integrationName,
+}: GenAuthUrlParams) => {
+  const { codeVerifier, codeChallenge } = await generatePKCEPair();
+
+  const scopes = [
+    'https://www.googleapis.com/auth/admin.directory.user.readonly',
+    'https://www.googleapis.com/auth/admin.directory.group.readonly',
+  ].join(' ');
+
+  const authUrl = new URL('https://accounts.google.com/o/oauth2/v2/auth');
+  authUrl.searchParams.set('client_id', env.GOOGLE_APP_CLIENT_ID);
+  authUrl.searchParams.set('redirect_uri', env.NEXT_PUBLIC_GOOGLE_REDIRECT_URI);
+  authUrl.searchParams.set('response_type', 'code');
+  authUrl.searchParams.set('scope', scopes);
+  authUrl.searchParams.set('access_type', 'offline'); // To get refresh token
+  authUrl.searchParams.set('prompt', 'consent'); // Force consent to get refresh token
+  authUrl.searchParams.set('code_challenge', codeChallenge);
+  authUrl.searchParams.set('code_challenge_method', 'S256');
+  authUrl.searchParams.set(
+    'state',
+    JSON.stringify({
+      integrationType: selectedType,
+      integrationName: integrationName.trim(),
+      codeVerifier,
     })
   );
 

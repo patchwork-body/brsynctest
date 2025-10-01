@@ -12,6 +12,8 @@ export const env = createEnv({
     // OPEN_AI_API_KEY: z.string().min(1),
     SUPABASE_SERVICE_ROLE_KEY: z.string().min(1),
     MS_AZURE_APP_SECRET: z.string().min(1).optional(),
+    GOOGLE_APP_CLIENT_ID: z.string().min(1),
+    GOOGLE_APP_CLIENT_SECRET: z.string().min(1),
   },
   /*
    * Environment variables available on the client (and server).
@@ -22,7 +24,8 @@ export const env = createEnv({
     NEXT_PUBLIC_SUPABASE_URL: z.string().url(),
     NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().min(1),
     NEXT_PUBLIC_MS_AZURE_CLIENT_ID: z.string().min(1),
-    NEXT_PUBLIC_MS_AZURE_REDIRECT_URI: z.string().url(),
+    NEXT_PUBLIC_MS_AZURE_REDIRECT_URI: z.url(),
+    NEXT_PUBLIC_GOOGLE_REDIRECT_URI: z.url(),
   },
   /*
    * Due to how Next.js bundles environment variables on Edge and Client,
@@ -38,5 +41,8 @@ export const env = createEnv({
     NEXT_PUBLIC_MS_AZURE_CLIENT_ID: process.env.NEXT_PUBLIC_MS_AZURE_CLIENT_ID,
     NEXT_PUBLIC_MS_AZURE_REDIRECT_URI:
       process.env.NEXT_PUBLIC_MS_AZURE_REDIRECT_URI,
+    NEXT_PUBLIC_GOOGLE_REDIRECT_URI: process.env.NEXT_PUBLIC_GOOGLE_REDIRECT_URI,
+    GOOGLE_APP_CLIENT_ID: process.env.GOOGLE_APP_CLIENT_ID,
+    GOOGLE_APP_CLIENT_SECRET: process.env.GOOGLE_APP_CLIENT_SECRET,
   },
 });

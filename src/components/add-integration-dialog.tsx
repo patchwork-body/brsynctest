@@ -12,7 +12,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { genMsAuthUrl } from '../lib/actions';
+import { genGoogleAuthUrl, genMsAuthUrl } from '../lib/actions';
 
 type IntegrationType = Tables<'integrations'>['type'];
 
@@ -78,6 +78,20 @@ export function AddIntegrationDialog({
 
       try {
         window.location.href = await genMsAuthUrl({
+          integrationName,
+          selectedType,
+        });
+      } catch (error) {
+        console.error('Failed to generate PKCE parameters:', error);
+        setError('Failed to initialize OAuth flow');
+      } finally {
+        setIsConnecting(false);
+      }
+    } else if (selectedType === 'google_workspace') {
+      setIsConnecting(true);
+
+      try {
+        window.location.href = await genGoogleAuthUrl({
           integrationName,
           selectedType,
         });
