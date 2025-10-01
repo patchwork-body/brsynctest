@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Tables } from '@/types/supabase';
+import { env } from '@/env.mjs';
 import {
   Dialog,
   DialogContent,
@@ -66,7 +67,42 @@ export function AddIntegrationDialog({
     setError(null);
   };
 
-  const handleConnect = async () => {};
+  const handleConnect = async () => {
+    if (!selectedType || !integrationName.trim()) {
+      setError('Please provide an integration name');
+      return;
+    }
+
+    if (selectedType === 'microsoft_entra') {
+      const redirectUri = encodeURIComponent(
+        env.NEXT_PUBLIC_MS_AZURE_REDIRECT_URI
+      );
+      const scope = encodeURIComponent(
+        'https://graph.microsoft.com/User.Read https://graph.microsoft.com/Group.Read.All'
+      );
+
+      const authUrl = new URL(
+        'https://login.microsoftonline.com/organizations/oauth2/v2.0/authorize'
+      );
+      authUrl.searchParams.set('client_id', env.NEXT_PUBLIC_MS_AZURE_CLIENT_ID);
+      authUrl.searchParams.set('redirect_uri', redirectUri);
+      authUrl.searchParams.set('scope', scope);
+      authUrl.searchParams.set('response_mode', 'query');
+      authUrl.searchParams.set('response_type', 'code');
+      authUrl.searchParams.set(
+        'state',
+        JSON.stringify({
+          integrationType: selectedType,
+          integrationName: integrationName.trim(),
+        })
+      );
+
+      window.location.href = authUrl.toString();
+    } else {
+      // Handle other integration types
+      setError('Integration type not yet implemented');
+    }
+  };
 
   const handleClose = () => {
     setSelectedType(null);
