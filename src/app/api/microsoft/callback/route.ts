@@ -33,6 +33,15 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    // Extract code verifier from state for PKCE
+    const codeVerifier = integrationData?.codeVerifier;
+    if (!codeVerifier) {
+      console.error('Missing code verifier in state');
+      return NextResponse.redirect(
+        new URL('/?error=missing_code_verifier', request.url)
+      );
+    }
+
     // Exchange authorization code for access token
     const tokenResponse = await fetch(
       'https://login.microsoftonline.com/organizations/oauth2/v2.0/token',
@@ -48,6 +57,7 @@ export async function GET(request: NextRequest) {
           redirect_uri: `${request.nextUrl.origin}/api/microsoft/callback`,
           grant_type: 'authorization_code',
           scope: 'User.Read.All Group.Read.All',
+          code_verifier: codeVerifier, // Add PKCE code verifier
         }),
       }
     );

@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Tables } from '@/types/supabase';
 import { env } from '@/env.mjs';
+import { generatePKCEPair } from '@/lib/pkce';
 import {
   Dialog,
   DialogContent,
@@ -74,30 +75,44 @@ export function AddIntegrationDialog({
     }
 
     if (selectedType === 'microsoft_entra') {
-      const scope = encodeURIComponent(
-        'https://graph.microsoft.com/User.Read https://graph.microsoft.com/Group.Read.All'
-      );
+      try {
+        // Generate PKCE parameters
+        const { codeVerifier, codeChallenge } = await generatePKCEPair();
 
-      const authUrl = new URL(
-        'https://login.microsoftonline.com/organizations/oauth2/v2.0/authorize'
-      );
-      authUrl.searchParams.set('client_id', env.NEXT_PUBLIC_MS_AZURE_CLIENT_ID);
-      authUrl.searchParams.set(
-        'redirect_uri',
-        env.NEXT_PUBLIC_MS_AZURE_REDIRECT_URI
-      );
-      authUrl.searchParams.set('scope', scope);
-      authUrl.searchParams.set('response_mode', 'query');
-      authUrl.searchParams.set('response_type', 'code');
-      authUrl.searchParams.set(
-        'state',
-        JSON.stringify({
-          integrationType: selectedType,
-          integrationName: integrationName.trim(),
-        })
-      );
+        const scope = encodeURIComponent(
+          'https://graph.microsoft.com/User.Read https://graph.microsoft.com/Group.Read.All'
+        );
 
-      window.location.href = authUrl.toString();
+        const authUrl = new URL(
+          'https://login.microsoftonline.com/organizations/oauth2/v2.0/authorize'
+        );
+        authUrl.searchParams.set(
+          'client_id',
+          env.NEXT_PUBLIC_MS_AZURE_CLIENT_ID
+        );
+        authUrl.searchParams.set(
+          'redirect_uri',
+          env.NEXT_PUBLIC_MS_AZURE_REDIRECT_URI
+        );
+        authUrl.searchParams.set('scope', scope);
+        authUrl.searchParams.set('response_mode', 'query');
+        authUrl.searchParams.set('response_type', 'code');
+        authUrl.searchParams.set('code_challenge', codeChallenge);
+        authUrl.searchParams.set('code_challenge_method', 'S256');
+        authUrl.searchParams.set(
+          'state',
+          JSON.stringify({
+            integrationType: selectedType,
+            integrationName: integrationName.trim(),
+            codeVerifier, // Store code verifier in state for callback
+          })
+        );
+
+        window.location.href = authUrl.toString();
+      } catch (error) {
+        console.error('Failed to generate PKCE parameters:', error);
+        setError('Failed to initialize OAuth flow');
+      }
     } else {
       // Handle other integration types
       setError('Integration type not yet implemented');
