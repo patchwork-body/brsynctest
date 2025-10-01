@@ -42,6 +42,46 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    // Validate environment variables
+    if (!env.NEXT_PUBLIC_MS_AZURE_CLIENT_ID) {
+      console.error('Missing NEXT_PUBLIC_MS_AZURE_CLIENT_ID');
+      return NextResponse.redirect(
+        new URL('/?error=missing_client_id', request.url)
+      );
+    }
+
+    if (!env.MS_AZURE_APP_SECRET) {
+      console.error('Missing MS_AZURE_APP_SECRET');
+      return NextResponse.redirect(
+        new URL('/?error=missing_client_secret', request.url)
+      );
+    }
+
+    // Prepare token exchange request
+    const redirectUri =
+      env.NEXT_PUBLIC_MS_AZURE_REDIRECT_URI ||
+      `${request.nextUrl.origin}/api/microsoft/callback`;
+
+    const tokenRequestBody = new URLSearchParams({
+      client_id: env.NEXT_PUBLIC_MS_AZURE_CLIENT_ID,
+      client_secret: env.MS_AZURE_APP_SECRET,
+      code: code,
+      redirect_uri: redirectUri,
+      grant_type: 'authorization_code',
+      scope:
+        'https://graph.microsoft.com/User.Read https://graph.microsoft.com/Group.Read.All',
+      code_verifier: codeVerifier,
+    });
+
+    console.log('Token exchange request:', {
+      client_id: env.NEXT_PUBLIC_MS_AZURE_CLIENT_ID,
+      redirect_uri: redirectUri,
+      scope:
+        'https://graph.microsoft.com/User.Read https://graph.microsoft.com/Group.Read.All',
+      code_verifier_present: !!codeVerifier,
+      code_length: code?.length,
+    });
+
     // Exchange authorization code for access token
     const tokenResponse = await fetch(
       'https://login.microsoftonline.com/organizations/oauth2/v2.0/token',
@@ -50,24 +90,33 @@ export async function GET(request: NextRequest) {
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
         },
-        body: new URLSearchParams({
-          client_id: env.NEXT_PUBLIC_MS_AZURE_CLIENT_ID,
-          client_secret: env.MS_AZURE_APP_SECRET,
-          code: code,
-          redirect_uri: `${request.nextUrl.origin}/api/microsoft/callback`,
-          grant_type: 'authorization_code',
-          scope:
-            'https://graph.microsoft.com/User.Read https://graph.microsoft.com/Group.Read.All',
-          code_verifier: codeVerifier, // Add PKCE code verifier
-        }),
+        body: tokenRequestBody,
       }
     );
 
     if (!tokenResponse.ok) {
       const errorData = await tokenResponse.text();
-      console.error('Token exchange failed:', errorData);
+      console.error('Token exchange failed:', {
+        status: tokenResponse.status,
+        statusText: tokenResponse.statusText,
+        errorData,
+        requestBody: Object.fromEntries(tokenRequestBody.entries()),
+      });
+
+      // Try to parse error data for more details
+      let errorMessage = 'token_exchange_failed';
+      try {
+        const parsedError = JSON.parse(errorData);
+        if (parsedError.error) {
+          errorMessage = `${parsedError.error}: ${parsedError.error_description || 'Unknown error'}`;
+        }
+      } catch {
+        // If parsing fails, use the raw error data
+        errorMessage = errorData;
+      }
+
       return NextResponse.redirect(
-        new URL('/?error=token_exchange_failed', request.url)
+        new URL(`/?error=${encodeURIComponent(errorMessage)}`, request.url)
       );
     }
 
