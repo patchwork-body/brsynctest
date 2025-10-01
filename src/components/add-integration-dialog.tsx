@@ -74,9 +74,6 @@ export function AddIntegrationDialog({
     }
 
     if (selectedType === 'microsoft_entra') {
-      const redirectUri = encodeURIComponent(
-        env.NEXT_PUBLIC_MS_AZURE_REDIRECT_URI
-      );
       const scope = encodeURIComponent(
         'https://graph.microsoft.com/User.Read https://graph.microsoft.com/Group.Read.All'
       );
@@ -85,7 +82,10 @@ export function AddIntegrationDialog({
         'https://login.microsoftonline.com/organizations/oauth2/v2.0/authorize'
       );
       authUrl.searchParams.set('client_id', env.NEXT_PUBLIC_MS_AZURE_CLIENT_ID);
-      authUrl.searchParams.set('redirect_uri', redirectUri);
+      authUrl.searchParams.set(
+        'redirect_uri',
+        env.NEXT_PUBLIC_MS_AZURE_REDIRECT_URI
+      );
       authUrl.searchParams.set('scope', scope);
       authUrl.searchParams.set('response_mode', 'query');
       authUrl.searchParams.set('response_type', 'code');
