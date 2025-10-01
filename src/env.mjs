@@ -11,7 +11,7 @@ export const env = createEnv({
     // DATABASE_URL: z.string().url(),
     // OPEN_AI_API_KEY: z.string().min(1),
     SUPABASE_SERVICE_ROLE_KEY: z.string().min(1),
-    MS_AZURE_APP_SECRET: z.string().min(1),
+    MS_AZURE_APP_SECRET: z.string().min(1).optional(),
   },
   /*
    * Environment variables available on the client (and server).
