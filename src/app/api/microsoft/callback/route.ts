@@ -107,16 +107,14 @@ export async function GET(request: NextRequest) {
       code: code,
       redirect_uri: redirectUri,
       grant_type: 'authorization_code',
-      scope:
-        'https://graph.microsoft.com/User.Read https://graph.microsoft.com/Group.Read.All',
+      scope: 'User.Read.All Directory.Read.All Group.Read.All',
       code_verifier: codeVerifier,
     });
 
     console.log('Token exchange request:', {
       client_id: env.NEXT_PUBLIC_MS_AZURE_CLIENT_ID,
       redirect_uri: redirectUri,
-      scope:
-        'https://graph.microsoft.com/User.Read https://graph.microsoft.com/Group.Read.All',
+      scope: 'User.Read.All Directory.Read.All Group.Read.All',
       code_verifier_present: !!codeVerifier,
       code_length: code?.length,
     });
@@ -168,8 +166,7 @@ export async function GET(request: NextRequest) {
       status: 'active',
       config: {
         tenant_id: tokenData.tenant_id || null,
-        scope:
-          'https://graph.microsoft.com/User.Read https://graph.microsoft.com/Group.Read.All',
+        scope: 'User.Read.All Directory.Read.All Group.Read.All',
       },
       auth_data: {
         access_token: tokenData.access_token,
