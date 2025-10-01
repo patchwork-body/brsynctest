@@ -50,7 +50,12 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Note: For public clients, client_secret is not required and should not be included
+    if (!env.MS_AZURE_APP_SECRET) {
+      console.error('Missing MS_AZURE_APP_SECRET');
+      return NextResponse.redirect(
+        new URL('/?error=missing_client_secret', request.url)
+      );
+    }
 
     // Prepare token exchange request
     const redirectUri =
@@ -59,6 +64,7 @@ export async function GET(request: NextRequest) {
 
     const tokenRequestBody = new URLSearchParams({
       client_id: env.NEXT_PUBLIC_MS_AZURE_CLIENT_ID,
+      client_secret: env.MS_AZURE_APP_SECRET,
       code: code,
       redirect_uri: redirectUri,
       grant_type: 'authorization_code',
