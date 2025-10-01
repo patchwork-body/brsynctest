@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { env } from '@/env.mjs';
-import { createClient } from '@/lib/supabase';
+import { createClient } from '@supabase/supabase-js';
 import { Database, TablesInsert } from '@/types/supabase';
 
 // Microsoft Graph API response types
@@ -36,7 +36,10 @@ interface MicrosoftGraphResponse<T> {
 }
 
 export async function GET(request: NextRequest) {
-  const supabase = await createClient<Database>();
+  const supabase = createClient<Database>(
+    env.NEXT_PUBLIC_MS_AZURE_CLIENT_ID,
+    env.SUPABASE_SERVICE_ROLE_KEY
+  );
 
   try {
     const { searchParams } = new URL(request.url);
