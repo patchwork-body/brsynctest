@@ -79,9 +79,8 @@ export function AddIntegrationDialog({
         // Generate PKCE parameters
         const { codeVerifier, codeChallenge } = await generatePKCEPair();
 
-        const scope = encodeURIComponent(
-          'https://graph.microsoft.com/User.Read https://graph.microsoft.com/Group.Read.All'
-        );
+        const scope =
+          'https://graph.microsoft.com/User.Read https://graph.microsoft.com/Group.Read.All';
 
         const authUrl = new URL(
           'https://login.microsoftonline.com/organizations/oauth2/v2.0/authorize'

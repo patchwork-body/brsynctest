@@ -56,7 +56,8 @@ export async function GET(request: NextRequest) {
           code: code,
           redirect_uri: `${request.nextUrl.origin}/api/microsoft/callback`,
           grant_type: 'authorization_code',
-          scope: 'User.Read.All Group.Read.All',
+          scope:
+            'https://graph.microsoft.com/User.Read https://graph.microsoft.com/Group.Read.All',
           code_verifier: codeVerifier, // Add PKCE code verifier
         }),
       }
