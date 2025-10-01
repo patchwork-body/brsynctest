@@ -2,8 +2,6 @@
 
 import { useState } from 'react';
 import { Tables } from '@/types/supabase';
-import { env } from '@/env.mjs';
-import { generatePKCEPair } from '@/lib/pkce';
 import {
   Dialog,
   DialogContent,
@@ -14,6 +12,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { genMsAuthUrl } from '../lib/actions';
 
 type IntegrationType = Tables<'integrations'>['type'];
 
@@ -60,7 +59,7 @@ export function AddIntegrationDialog({
     null
   );
   const [integrationName, setIntegrationName] = useState('');
-  const [isConnecting, _setIsConnecting] = useState(false);
+  const [isConnecting, setIsConnecting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const handleTypeSelect = (type: IntegrationType) => {
@@ -75,42 +74,18 @@ export function AddIntegrationDialog({
     }
 
     if (selectedType === 'microsoft_entra') {
+      setIsConnecting(true);
+
       try {
-        // Generate PKCE parameters
-        const { codeVerifier, codeChallenge } = await generatePKCEPair();
-
-        const scope =
-          'https://graph.microsoft.com/User.Read https://graph.microsoft.com/Group.Read.All';
-
-        const authUrl = new URL(
-          'https://login.microsoftonline.com/organizations/oauth2/v2.0/authorize'
-        );
-        authUrl.searchParams.set(
-          'client_id',
-          env.NEXT_PUBLIC_MS_AZURE_CLIENT_ID
-        );
-        authUrl.searchParams.set(
-          'redirect_uri',
-          env.NEXT_PUBLIC_MS_AZURE_REDIRECT_URI
-        );
-        authUrl.searchParams.set('scope', scope);
-        authUrl.searchParams.set('response_mode', 'query');
-        authUrl.searchParams.set('response_type', 'code');
-        authUrl.searchParams.set('code_challenge', codeChallenge);
-        authUrl.searchParams.set('code_challenge_method', 'S256');
-        authUrl.searchParams.set(
-          'state',
-          JSON.stringify({
-            integrationType: selectedType,
-            integrationName: integrationName.trim(),
-            codeVerifier, // Store code verifier in state for callback
-          })
-        );
-
-        window.location.href = authUrl.toString();
+        window.location.href = await genMsAuthUrl({
+          integrationName,
+          selectedType,
+        });
       } catch (error) {
         console.error('Failed to generate PKCE parameters:', error);
         setError('Failed to initialize OAuth flow');
+      } finally {
+        setIsConnecting(false);
       }
     } else {
       // Handle other integration types

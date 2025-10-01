@@ -3,6 +3,8 @@
 import { createClient } from '@/lib/supabase';
 import { revalidatePath } from 'next/cache';
 import { Database } from '@/types/supabase';
+import { generatePKCEPair } from './pkce';
+import { env } from '../env.mjs';
 
 export async function addGroup(formData: FormData) {
   const supabase = await createClient<Database>();
@@ -77,3 +79,46 @@ export async function addEmployee(formData: FormData) {
   revalidatePath('/');
   return data;
 }
+
+type GenMsAuthUrlParams = {
+  selectedType: string;
+  integrationName: string;
+};
+
+export const genMsAuthUrl = async ({
+  selectedType,
+  integrationName,
+}: GenMsAuthUrlParams) => {
+  const supabase = await createClient<Database>();
+
+  // Generate PKCE parameters
+  const { codeVerifier, codeChallenge } = await generatePKCEPair();
+
+  const scope =
+    'https://graph.microsoft.com/User.Read https://graph.microsoft.com/Group.Read.All';
+
+  const authUrl = new URL(
+    'https://login.microsoftonline.com/organizations/oauth2/v2.0/authorize'
+  );
+  authUrl.searchParams.set('client_id', env.NEXT_PUBLIC_MS_AZURE_CLIENT_ID);
+  authUrl.searchParams.set(
+    'redirect_uri',
+    env.NEXT_PUBLIC_MS_AZURE_REDIRECT_URI
+  );
+  authUrl.searchParams.set('scope', scope);
+  authUrl.searchParams.set('response_mode', 'query');
+  authUrl.searchParams.set('response_type', 'code');
+  authUrl.searchParams.set('code_challenge', codeChallenge);
+  authUrl.searchParams.set('code_challenge_method', 'S256');
+  authUrl.searchParams.set(
+    'state',
+    JSON.stringify({
+      integrationType: selectedType,
+      integrationName: integrationName.trim(),
+      userId: (await supabase.auth.getUser()).data.user?.id,
+      codeVerifier, // Store code verifier in state for callback
+    })
+  );
+
+  return authUrl.toString();
+};

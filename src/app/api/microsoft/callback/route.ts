@@ -165,7 +165,7 @@ export async function GET(request: NextRequest) {
     const {
       data: { user },
       error: userError,
-    } = await supabase.auth.getUser();
+    } = await supabase.auth.admin.getUserById(integrationData.userId);
 
     if (userError || !user) {
       console.error('Failed to get current user:', userError);
