@@ -156,6 +156,36 @@ export async function GET(request: NextRequest) {
     try {
       const accessToken = tokenData.access_token;
 
+      // First, get the customer ID to ensure we're using the correct domain
+      let customerId = 'my_customer';
+      try {
+        const customerResponse = await fetch(
+          'https://admin.googleapis.com/admin/directory/v1/customers/my_customer',
+          {
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+              'Content-Type': 'application/json',
+            },
+          }
+        );
+
+        if (customerResponse.ok) {
+          const customerData = await customerResponse.json();
+          customerId = customerData.id || 'my_customer';
+          console.log('Using customer ID:', customerId);
+        } else {
+          console.warn(
+            'Could not fetch customer ID, using default:',
+            customerId
+          );
+        }
+      } catch (customerError) {
+        console.warn(
+          'Error fetching customer ID, using default:',
+          customerError
+        );
+      }
+
       // Fetch all users with pagination
       const allUsers: GoogleUser[] = [];
       let nextPageToken: string | undefined = undefined;
@@ -164,8 +194,9 @@ export async function GET(request: NextRequest) {
         const usersUrl = new URL(
           'https://admin.googleapis.com/admin/directory/v1/users'
         );
-        usersUrl.searchParams.set('customer', 'my_customer'); // Gets all users in the domain
-        usersUrl.searchParams.set('maxResults', '500');
+        usersUrl.searchParams.set('customer', customerId); // Gets all users in the domain
+        usersUrl.searchParams.set('maxResults', '100'); // Reduced from 500 to avoid rate limits
+        usersUrl.searchParams.set('orderBy', 'email'); // Add ordering for consistent results
         if (nextPageToken) {
           usersUrl.searchParams.set('pageToken', nextPageToken);
         }
@@ -178,11 +209,19 @@ export async function GET(request: NextRequest) {
         });
 
         if (!usersResponse.ok) {
+          const errorText = await usersResponse.text();
           console.error(
             'Failed to fetch users from Google:',
             usersResponse.status,
-            await usersResponse.text()
+            errorText
           );
+
+          // If it's a 400 error, it might be a permissions issue
+          if (usersResponse.status === 400) {
+            console.error(
+              'This might be due to insufficient permissions. Ensure the Google Workspace admin has granted the necessary scopes.'
+            );
+          }
           break;
         }
 
@@ -235,8 +274,9 @@ export async function GET(request: NextRequest) {
         const groupsUrl = new URL(
           'https://admin.googleapis.com/admin/directory/v1/groups'
         );
-        groupsUrl.searchParams.set('customer', 'my_customer');
-        groupsUrl.searchParams.set('maxResults', '200');
+        groupsUrl.searchParams.set('customer', customerId);
+        groupsUrl.searchParams.set('maxResults', '100'); // Reduced from 200
+        groupsUrl.searchParams.set('orderBy', 'email'); // Add ordering for consistent results
         if (nextPageToken) {
           groupsUrl.searchParams.set('pageToken', nextPageToken);
         }
@@ -249,11 +289,27 @@ export async function GET(request: NextRequest) {
         });
 
         if (!groupsResponse.ok) {
+          const errorText = await groupsResponse.text();
           console.error(
             'Failed to fetch groups from Google:',
             groupsResponse.status,
-            await groupsResponse.text()
+            errorText
           );
+
+          // If it's a 404 error, it might be a domain configuration issue
+          if (groupsResponse.status === 404) {
+            console.error('Domain not found. This might be due to:');
+            console.error(
+              '1. The Google Workspace domain is not properly configured'
+            );
+            console.error(
+              '2. The service account does not have access to the domain'
+            );
+            console.error('3. The domain verification is not complete');
+            console.error(
+              '4. The customer parameter is incorrect for this domain'
+            );
+          }
           break;
         }
 
