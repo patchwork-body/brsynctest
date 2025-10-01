@@ -161,6 +161,8 @@ export async function GET(request: NextRequest) {
 
     const tokenData = await tokenResponse.json();
 
+    console.log('Token data:', integrationData);
+
     // Get the current user
     const {
       data: { user },
