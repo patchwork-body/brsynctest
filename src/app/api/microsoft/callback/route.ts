@@ -37,7 +37,7 @@ interface MicrosoftGraphResponse<T> {
 
 export async function GET(request: NextRequest) {
   const supabase = createClient<Database>(
-    env.NEXT_PUBLIC_MS_AZURE_CLIENT_ID,
+    env.NEXT_PUBLIC_SUPABASE_URL,
     env.SUPABASE_SERVICE_ROLE_KEY
   );
 
