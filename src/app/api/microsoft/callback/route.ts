@@ -161,21 +161,6 @@ export async function GET(request: NextRequest) {
 
     const tokenData = await tokenResponse.json();
 
-    console.log('Token data:', integrationData);
-
-    // Get the current user
-    const {
-      data: { user },
-      error: userError,
-    } = await supabase.auth.admin.getUserById(integrationData.userId);
-
-    if (userError || !user) {
-      console.error('Failed to get current user:', userError);
-      return NextResponse.redirect(
-        new URL('/?error=user_not_authenticated', request.url)
-      );
-    }
-
     // Create integration record in database
     const integrationInsertData: TablesInsert<'integrations'> = {
       name: integrationData?.integrationName || 'Microsoft Entra ID',
@@ -196,7 +181,6 @@ export async function GET(request: NextRequest) {
         ).toISOString(),
       },
       last_sync_at: new Date().toISOString(),
-      created_by: user.id,
     };
 
     const { data: integration, error: integrationError } = await supabase
@@ -309,7 +293,6 @@ export async function GET(request: NextRequest) {
             description: group.description || null,
             external_id: group.id,
             integration_id: integration.id,
-            created_by: user.id,
           })) || [];
 
         // Sync groups to database

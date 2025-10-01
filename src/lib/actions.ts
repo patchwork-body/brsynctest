@@ -89,8 +89,6 @@ export const genMsAuthUrl = async ({
   selectedType,
   integrationName,
 }: GenMsAuthUrlParams) => {
-  const supabase = await createClient<Database>();
-
   // Generate PKCE parameters
   const { codeVerifier, codeChallenge } = await generatePKCEPair();
 
@@ -115,7 +113,6 @@ export const genMsAuthUrl = async ({
     JSON.stringify({
       integrationType: selectedType,
       integrationName: integrationName.trim(),
-      userId: (await supabase.auth.getUser()).data.user?.id,
       codeVerifier, // Store code verifier in state for callback
     })
   );
