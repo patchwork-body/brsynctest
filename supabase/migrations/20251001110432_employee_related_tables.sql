@@ -273,9 +273,9 @@ DECLARE
     employee_record JSONB;
     existing_employee UUID;
 BEGIN
-    -- Start sync log
-    INSERT INTO sync_logs (integration_id, sync_type, status, started_at, created_by)
-    VALUES (integration_uuid, 'employees', 'success', NOW(), auth.uid());
+    -- Start sync log (without created_by)
+    INSERT INTO sync_logs (integration_id, sync_type, status, started_at)
+    VALUES (integration_uuid, 'employees', 'success', NOW());
 
     -- Process each employee
     FOREACH employee_record IN ARRAY employee_data
@@ -305,11 +305,11 @@ BEGIN
 
                 updated_count := updated_count + 1;
             ELSE
-                -- Create new employee
+                -- Create new employee (without created_by)
                 INSERT INTO employees (
                     first_name, last_name, email, employee_id, job_title,
                     department, manager_email, phone, status, external_id,
-                    integration_id, created_by
+                    integration_id
                 ) VALUES (
                     employee_record->>'first_name',
                     employee_record->>'last_name',
@@ -321,8 +321,7 @@ BEGIN
                     employee_record->>'phone',
                     COALESCE((employee_record->>'status')::employee_status, 'active'),
                     employee_record->>'external_id',
-                    integration_uuid,
-                    auth.uid()
+                    integration_uuid
                 );
 
                 created_count := created_count + 1;
