@@ -273,7 +273,7 @@ DECLARE
     employee_record JSONB;
     existing_employee UUID;
 BEGIN
-    -- Start sync log (without created_by)
+    -- Start sync log
     INSERT INTO sync_logs (integration_id, sync_type, status, started_at)
     VALUES (integration_uuid, 'employees', 'success', NOW());
 
@@ -305,7 +305,7 @@ BEGIN
 
                 updated_count := updated_count + 1;
             ELSE
-                -- Create new employee (without created_by)
+                -- Create new employee
                 INSERT INTO employees (
                     first_name, last_name, email, employee_id, job_title,
                     department, manager_email, phone, status, external_id,
@@ -319,7 +319,7 @@ BEGIN
                     employee_record->>'department',
                     employee_record->>'manager_email',
                     employee_record->>'phone',
-                    COALESCE((employee_record->>'status')::employee_status, 'active'),
+                    COALESCE((employee_record->>'status')::employee_status, 'active'::employee_status),
                     employee_record->>'external_id',
                     integration_uuid
                 );
@@ -346,10 +346,13 @@ BEGIN
     AND sync_type = 'employees'
     AND completed_at IS NULL;
 
-    -- Update integration last sync time
+    -- Update integration last sync time - FIX IS HERE
     UPDATE integrations SET
         last_sync_at = NOW(),
-        status = CASE WHEN error_count > 0 THEN 'error' ELSE 'active' END
+        status = CASE
+            WHEN error_count > 0 THEN 'error'::integration_status
+            ELSE 'active'::integration_status
+        END
     WHERE id = integration_uuid;
 
     RETURN json_build_object(
